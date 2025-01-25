@@ -1,0 +1,99 @@
+#!/bin/sh
+#
+# Usage:
+#   kb [-q] <URL>
+#
+# Example:
+#   kb https://example.com/foo/bar
+#
+# Requirements:
+#   - monolith
+#   - $EDITOR set to your preferred text editor (vim, nano, etc.)
+#   - $KB_BASE_PATH set, e.g. /home/username/kb
+
+set -euo pipefail
+
+SKIP_NOTES="no"
+
+while getopts "q" opt; do
+  case $opt in
+    q)
+      SKIP_NOTES="yes"
+      ;;
+    *)
+      echo "Usage: $0 [-q] <URL>"
+      exit 1
+      ;;
+  esac
+done
+
+shift $((OPTIND -1))
+
+# --- 1) Grab the argument (the URL) ---
+if [ "$#" -ne 1 ]; then
+  echo "Usage: $0 <URL>"
+  exit 1
+fi
+
+URL="$1"
+
+# --- 2) Parse the domain (e.g. "example.com") and the path (e.g. "foo/bar"). ---
+DOMAIN="$(echo "$URL" | awk -F/ '{print $3}')"
+PATH_ONLY="$(echo "$URL" | cut -d/ -f4-)"
+
+# Root folder for output (based on $KB_BASE_PATH)
+BASE_DIR="$KB_BASE_PATH/$DOMAIN"
+
+# Figure out the output directory and filename
+if [ -z "$PATH_ONLY" ]; then
+  # No sub-path; store as "index.html"
+  OUTDIR="$BASE_DIR"
+  FILENAME="index.html"
+else
+  OUTDIR="$BASE_DIR/$(dirname "$PATH_ONLY")"
+  BASENAME="$(basename "$PATH_ONLY")"
+
+  # If the path doesn't end with .html, we'll name it "index.html".
+  if [ -z "$BASENAME" ] || [[ "$BASENAME" != *.html ]]; then
+    FILENAME="index.html"
+  else
+    FILENAME="$BASENAME"
+  fi
+fi
+
+mkdir -p "$OUTDIR"
+OUTFILE="$OUTDIR/$FILENAME"
+
+# --- 3) Run monolith to save the page as a single HTML file ---
+echo "Downloading to $OUTFILE..."
+monolith -ajsFIo "$OUTFILE" "$URL"
+
+if [ "$SKIP_NOTES" != "yes" ]; then
+  # --- 4) Parse the <title> from the saved HTML, create or update _notes.md ---
+  NOTES_FILE="${OUTFILE%.html}_notes.md"
+
+  # 4a) Extract the raw <title> block (supports multi-line <title>).
+  raw_title="$(sed -n '/<title>/,/<\/title>/p' "$OUTFILE")"
+
+  # 4b) Remove the <title> and </title> tags and trim extra space.
+  clean_title="$(echo "$raw_title" \
+    | sed -E 's/<title>//g; s/<\/title>//g; s/^[[:space:]]+|[[:space:]]+$//g')"
+
+  # 4c) In case there are multiple lines, grab just the first line.
+  page_title="$(echo "$clean_title" | head -n1)"
+
+  # 4d) If _notes.md does not exist, populate it with initial content.
+  if [ ! -f "$NOTES_FILE" ]; then
+    {
+      echo "$page_title"
+      echo "Date: $(date -I)"
+      echo
+      echo
+    } > "$NOTES_FILE"
+  fi
+
+  # --- 5) Open the notes file in your chosen editor ---
+  "$EDITOR" "$NOTES_FILE"
+fi
+
+exit 0
