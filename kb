@@ -53,9 +53,9 @@ else
   OUTDIR="$BASE_DIR/$(dirname "$PATH_ONLY")"
   BASENAME="$(basename "$PATH_ONLY")"
 
-  # If the path doesn't end with .html, we'll name it "index.html".
-  if [ -z "$BASENAME" ] || [[ "$BASENAME" != *.html ]]; then
-    FILENAME="index.html"
+  # If the basename does not end with .html, append .html
+  if [[ "$BASENAME" != *.html ]]; then
+    FILENAME="$BASENAME.html"
   else
     FILENAME="$BASENAME"
   fi
