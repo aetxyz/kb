@@ -69,23 +69,12 @@ echo "Downloading to $OUTFILE..."
 monolith -ajsFIo "$OUTFILE" "$URL"
 
 if [ "$SKIP_NOTES" != "yes" ]; then
-  # --- 4) Parse the <title> from the saved HTML, create or update _notes.md ---
+  # 4) If _notes.md does not exist, populate it with initial content.
   NOTES_FILE="${OUTFILE%.html}_notes.md"
 
-  # 4a) Extract the raw <title> block (supports multi-line <title>).
-  raw_title="$(sed -n '/<title>/,/<\/title>/p' "$OUTFILE")"
-
-  # 4b) Remove the <title> and </title> tags and trim extra space.
-  clean_title="$(echo "$raw_title" \
-    | sed -E 's/<title>//g; s/<\/title>//g; s/^[[:space:]]+|[[:space:]]+$//g')"
-
-  # 4c) In case there are multiple lines, grab just the first line.
-  page_title="$(echo "$clean_title" | head -n1)"
-
-  # 4d) If _notes.md does not exist, populate it with initial content.
   if [ ! -f "$NOTES_FILE" ]; then
     {
-      echo "$page_title"
+      echo "$URL"
       echo "Date: $(date -I)"
       echo
       echo
