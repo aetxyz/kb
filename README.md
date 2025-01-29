@@ -11,7 +11,7 @@ in a location according to its domain and path within a subdirectory specified
 by `KB_BASE_PATH` in env.
 
 Once it downloads the web page, it opens `EDITOR` on a `_notes.md` file, which
-is placed alongside the HTML file. You can optionally pass `-q` to skip this.
+is placed alongside the HTML file. You can optionally pass `-c` to skip this.
 
 `kb` performs downloads using [monolith](https://github.com/Y2Z/monolith) and
 tries to keep file size down by skipping audio & web fonts. It also skips all

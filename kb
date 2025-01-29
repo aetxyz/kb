@@ -13,15 +13,15 @@
 
 set -euo pipefail
 
-SKIP_NOTES="no"
+SKIP_NOTES="yes"
 
-while getopts "q" opt; do
+while getopts "c" opt; do
   case $opt in
-    q)
-      SKIP_NOTES="yes"
+    c)
+      SKIP_NOTES="no"
       ;;
     *)
-      echo "Usage: $0 [-q] <URL>"
+      echo "Usage: $0 [-c] <URL>"
       exit 1
       ;;
   esac
